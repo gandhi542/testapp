@@ -14,15 +14,6 @@ spec:
   workspaces:
     - name: pipeline-ws
   tasks:
-  - name: git-clone
-    taskRef:
-      name: task-git-clone
-    workspaces:
-    - name: source
-      workspace: pipeline-ws
-    params:
-    - name: url
-      value: git://github.com/praveendee/$(params.project)
   - name: build-container-image
     taskRef:
       name: build-kaniko-git
@@ -48,7 +39,6 @@ spec:
       workspace: pipeline-ws
     runAfter:
      - build-container-image
-     - git-clone
 
 ---
 
@@ -104,25 +94,6 @@ spec:
       kustomize edit set image $(params.container_image)=$(params.container_image):$(params.container_tag)
       kustomize build | kubectl apply --filename -
 
----
-
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: task-git-clone
-  namespace: tekton-builds
-spec:
-  workspaces:
-  - name: source
-  params:
-  - name: url
-    type: string
-  steps:
-  - name: clone
-    image: bitnami/git
-    script: |
-      cd $(workspaces.source.path)
-      git clone $(params.url)
 
 ---
 
