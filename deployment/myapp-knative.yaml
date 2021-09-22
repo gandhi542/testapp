@@ -8,22 +8,25 @@ spec:
     metadata:
       name: myapp-v1
       annotations:
-        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "10"
         autoscaling.knative.dev/target: "1"
     spec:
       containers:
         - image: praveendurai/myapp:1.0
+          ports:
+          - containerPort: 8085
+            protocol: TCP
           env:
             - name: TARGET
               value: "myapp-greeter"
-          resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              cpu: 410m
-              memory: 512Mi
+          # resources:
+          #   requests:
+          #     cpu: 25m
+          #     memory: 64Mi
+          #   limits:
+          #     cpu: 410m
+          #     memory: 512Mi
           imagePullPolicy: Always
       imagePullSecrets:
         - name: regcred          
