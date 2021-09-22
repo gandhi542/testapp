@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: openson-myapp-cicd-run-
+  namespace: tekton-builds
+spec:
+  pipelineRef:
+    name: openson-myapp-cicd
+  workspaces:
+  - name: pipeline-ws
+    volumeClaimTemplate:
+      spec:
+        resources:
+          requests:
+            storage: 100Mi
+        accessModes:
+          - ReadWriteOnce
