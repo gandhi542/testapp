@@ -34,21 +34,36 @@ spec:
     - name: container_tag
       value: "$(params.release)"
   - name: deploy
+    # serviceAccountName: kn-deployer-account
     taskRef:
-      name: task-kustomize
+      name: kn-apply
     params:
-    - name: container_image
-      value: praveendurai/$(params.project)
-    - name: container_tag
-      value: "$(params.release)"
-    - name: manifests_path
-      value: $(params.project)/deployment
-    workspaces:
-    - name: source
-      workspace: pipeline-ws
+    - name: IMAGE
+      value: "praveendurai/$(params.project):$(params.release)"
+    - name: SERVICE
+      value: myapp-kn-service
+    - name: NAMESPACE
+      value: myns
+    - name: PORT
+      value: "8085"
     runAfter:
      - build-container-image
      - git-clone
+    # taskRef:
+    #   name: task-kustomize
+    # params:
+    # - name: container_image
+    #   value: praveendurai/$(params.project)
+    # - name: container_tag
+    #   value: "$(params.release)"
+    # - name: manifests_path
+    #   value: $(params.project)/deployment
+    # workspaces:
+    # - name: source
+    #   workspace: pipeline-ws
+    # runAfter:
+    #  - build-container-image
+    #  - git-clone
 
 ---
 
@@ -81,28 +96,75 @@ spec:
 
 ---
 
+# apiVersion: tekton.dev/v1beta1
+# kind: Task
+# metadata:
+#   name: task-kustomize
+#   namespace: tekton-builds
+# spec:
+#   params:
+#   - name: container_image
+#     type: string
+#   - name: container_tag
+#     type: string
+#   - name: manifests_path
+#     type: string
+#   workspaces:
+#   - name: source
+#   steps:
+#   - name: version
+#     image: nekottyo/kustomize-kubeval
+#     script: |
+#       cd $(workspaces.source.path)/$(params.manifests_path)
+#       kustomize edit set image $(params.container_image)=$(params.container_image):$(params.container_tag)
+#       kustomize build | kubectl apply --filename -
+
+
+---
+
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: task-kustomize
+  name: kn-apply
   namespace: tekton-builds
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: cli
 spec:
+  description: >-
+    This task deploys a given image to a Knative Service.
+
+    It uses `kn service apply` to create or update given knative service.
   params:
-  - name: container_image
-    type: string
-  - name: container_tag
-    type: string
-  - name: manifests_path
-    type: string
-  workspaces:
-  - name: source
+  - name: KN_IMAGE
+    description: kn CLI container image to run this task
+    default: gcr.io/knative-releases/knative.dev/client/cmd/kn:latest
+  - name: SERVICE
+    description: Knative service name
+  - name: IMAGE
+    description: Image to deploy
+  - name: NAMESPACE
+    description: Namespace where the image gets deployed to
+  - name: PORT
+    description: Port where service should be serving
+  volumes:
+  - name: dockerhub-secret
+    secret:
+      secretName: regcred
+      items:
+      - key: .dockerconfigjson
+        path: config.json
   steps:
-  - name: version
-    image: nekottyo/kustomize-kubeval
-    script: |
-      cd $(workspaces.source.path)/$(params.manifests_path)
-      kustomize edit set image $(params.container_image)=$(params.container_image):$(params.container_tag)
-      kustomize build | kubectl apply --filename -
+  - name: kn
+    image: "$(params.KN_IMAGE)"
+    command: ["/ko-app/kn"]
+    args: ["service", "create", "$(params.SERVICE)", "--namespace", "$(params.NAMESPACE)", "--image", "$(params.IMAGE)", "--port", "$(params.PORT)"]
+    volumeMounts:
+    - name: dockerhub-secret
+      mountPath: /kn/.docker/
 
 ---
 
@@ -152,3 +214,37 @@ subjects:
   - kind: ServiceAccount
     name: default
     namespace: tekton-builds
+
+---
+
+# Define a ServiceAccount named kn-deployer-account that has permission to
+# manage Knative services.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kn-deployer-account
+  namespace: myns
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kn-deployer
+rules:
+  - apiGroups: ["serving.knative.dev"]
+    resources: ["services", "revisions", "routes"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kn-deployer-binding
+subjects:
+- kind: ServiceAccount
+  name: kn-deployer-account
+  namespace: myns
+roleRef:
+  kind: ClusterRole
+  name: kn-deployer
+  apiGroup: rbac.authorization.k8s.io
