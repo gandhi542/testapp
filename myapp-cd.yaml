@@ -161,7 +161,7 @@ spec:
   - name: kn
     image: "$(params.KN_IMAGE)"
     command: ["/ko-app/kn"]
-    args: ["service", "create", "$(params.SERVICE)", "--namespace", "$(params.NAMESPACE)", "--image", "$(params.IMAGE)", "--port", "$(params.PORT)"]
+    args: ["service", "create", "$(params.SERVICE)", "--namespace", "$(params.NAMESPACE)", "--image", "$(params.IMAGE)", "--port", "$(params.PORT)", "--force"]
     volumeMounts:
     - name: dockerhub-secret
       mountPath: /kn/.docker/
