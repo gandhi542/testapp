@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     now = datetime.now()
-    return now.strftime("%d/%m/%Y %H:%M:%S")+' Hello there!!!! \n This is updated code...!'
+    return now.strftime("%d/%m/%Y %H:%M:%S")+' Hello there!!!! \n'
 
 #
 app.run(debug=True,host='0.0.0.0', port=8085)
