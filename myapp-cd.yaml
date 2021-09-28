@@ -4,7 +4,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: openson-myapp-cicd
-  namespace: tekton-builds
+  namespace: myns
 spec:
   params:
   - name: project
@@ -71,7 +71,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: build-kaniko-git
-  namespace: tekton-builds
+  namespace: myns
 spec:
   params:
   - name: app_repo
@@ -100,7 +100,7 @@ spec:
 # kind: Task
 # metadata:
 #   name: task-kustomize
-#   namespace: tekton-builds
+#   namespace: myns
 # spec:
 #   params:
 #   - name: container_image
@@ -126,7 +126,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: kn-apply
-  namespace: tekton-builds
+  namespace: myns
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
@@ -172,7 +172,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: task-git-clone
-  namespace: tekton-builds
+  namespace: myns
 spec:
   workspaces:
   - name: source
@@ -213,7 +213,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: tekton-builds
+    namespace: myns
 
 ---
 

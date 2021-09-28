@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   generateName: openson-myapp-cicd-run-
-  namespace: tekton-builds
+  namespace: myns
 spec:
   pipelineRef:
     name: openson-myapp-cicd
