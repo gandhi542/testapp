@@ -1,19 +1,19 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: myapp
+  name: testapp
   namespace: myns
 spec:
   template:
     metadata:
-      name: myapp-v1
+      name: testapp-v1
       annotations:
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "10"
         autoscaling.knative.dev/target: "1"
     spec:
       containers:
-        - image: praveendurai/myapp:1.0
+        - image: gandhid/test-app:latest
           ports:
           - containerPort: 8085
             protocol: TCP
